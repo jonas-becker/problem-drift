@@ -1,0 +1,95 @@
+{
+  "repeats": 1,
+  "common": {
+    "input_json_file_path": null,
+    "output_json_file_path": null,
+    "task_instruction_prompt": null,
+    "task_instruction_prompt_template": null,
+    "endpoint_url": "http://XXX:8081/v1",
+    "model_name": "meta-llama/Llama-3.1-70B-Instruct",
+    "api_key": "-",
+    "max_turns": 7,
+    "skip_decision_making": true,
+    "discussion_paradigm": "memory",
+    "response_generator": "simple",
+    "decision_protocol": "consensus_voting",
+    "visible_turns_in_memory": 1,
+    "debate_rounds": 2,
+    "concurrent_api_requests": 250,
+    "use_baseline": false,
+    "use_chain_of_thought": true,
+    "num_agents": 3,
+    "num_neutral_agents": 0,
+    "agent_generator": "expert",
+    "agent_generators_list": [],
+    "trust_remote_code": false,
+    "use_ablation": false,
+    "shuffle_input_samples": true,
+    "all_agents_generate_first_draft": false,
+    "all_agents_generate_draft": false,
+    "policy": null,
+    "voting_protocols_with_alterations": false,
+    "calculate_persona_diversity": true
+  },
+  "runs": [
+    {
+      "input_json_file_path": "data/datasets/gpqa.json",
+      "output_json_file_path": "exp1/out/output_gpqa.json",
+      "task_instruction_prompt": "Answer the provided question by choosing option A), B), C), or D). Include the letter corresponding to your answer in the solution.",
+      "num_samples": 226
+    },
+    {
+      "input_json_file_path": "data/datasets/xsum.json",
+      "output_json_file_path": "exp1/out/output_xsum.json",
+      "task_instruction_prompt": "Summarize the provided text into one sentence.",
+      "num_samples": 386
+    },
+    {
+      "input_json_file_path": "data/datasets/ifeval.json",
+      "output_json_file_path": "exp1/out/output_ifeval.json",
+      "task_instruction_prompt": "Follow the instruction.",
+      "num_samples": 541
+    },
+    {
+      "input_json_file_path": "data/datasets/etpc.json",
+      "output_json_file_path": "exp1/out/output_etpc.json",
+      "task_instruction_prompt": "Paraphrase the provided text into a single paraphrase by using all paraphrase types.",
+      "num_samples": 361
+    },
+    {
+      "input_json_file_path": "data/datasets/strategyqa.json",
+      "output_json_file_path": "exp1/out/output_strategyqa.json",
+      "task_instruction_prompt": "Answer the following question with A) Yes or B) No. Include the letter corresponding to your answer in the solution.",
+      "num_samples": 330
+    },
+    {
+      "input_json_file_path": "data/datasets/wmt19_de_en.json",
+      "output_json_file_path": "exp1/out/output_wmt19_de_en.json",
+      "task_instruction_prompt": "Translate the provided text from German to English.",
+      "num_samples": 341
+    },
+    {
+      "input_json_file_path": "data/datasets/winogrande.json",
+      "output_json_file_path": "exp1/out/output_winogrande.json",
+      "task_instruction_prompt": "Correctly fill the blank space _ by choosing option A) or B). Include the letter corresponding to your answer in the solution.",
+      "num_samples": 295
+    },
+    {
+      "input_json_file_path": "data/datasets/mmlu_pro.json",
+      "output_json_file_path": "exp1/out/output_mmlu_pro.json",
+      "task_instruction_prompt": "Answer the provided question by choosing one option. Include the letter corresponding to your answer in the solution.",
+      "num_samples": 373
+    },
+    {
+      "input_json_file_path": "data/datasets/ethics.json",
+      "output_json_file_path": "exp1/out/output_ethics.json",
+      "task_instruction_prompt": "Would most people believe this reasonable or unreasonable to say? Answer with A) Reasonable or B) Unreasonable. Include the letter corresponding to your answer in the solution.",
+      "num_samples": 351
+    },
+    {
+      "input_json_file_path": "data/datasets/aqua_rat.json",
+      "output_json_file_path": "exp1/out/output_aqua_rat.json",
+      "task_instruction_prompt": "Answer the provided question by choosing one option. Include the letter corresponding to your answer in the solution."
+    }
+  ]
+}

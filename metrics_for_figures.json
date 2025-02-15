@@ -1,0 +1,12 @@
+{
+    "etpc": ["bertscore"],
+    "wmt19_de_en": ["bertscore"],
+    "ethics": ["correct"],
+    "gpqa": ["correct"],
+    "ifeval": ["follow_all_instructions_strict"],
+    "mmlu_pro": ["correct"],
+    "strategyqa": ["correct"],
+    "winogrande": ["correct"],
+    "xsum": ["bertscore"],
+    "aqua_rat": ["correct"]
+}
