@@ -21,7 +21,6 @@ GENERATIVE_TASKS = ["etpc", "xsum", "wmt19_de_en"]
 REASONING_TASKS = ["strategyqa", "winogrande", "aqua_rat"]
 KNOWLEDGE_TASKS = ["gpqa", "mmlu_pro", "ethics"]
 TASKS_ORDER = GENERATIVE_TASKS + REASONING_TASKS + KNOWLEDGE_TASKS + ["ifeval"]
-#TASKS_ORDER = ["etpc", "strategyqa"]
 
 
 original_print = print

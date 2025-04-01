@@ -1,0 +1,83 @@
+{
+  "repeats": 3,
+  "common": {
+    "output_json_file_path": null,
+    "task_instruction_prompt_template": null,
+    "endpoint_url": "http://XXX:8081/generate",
+    "model_name": "meta-llama/Llama-3.1-70B-Instruct",
+    "api_key": "-",
+    "max_turns": 7,
+    "skip_decision_making": true,
+    "discussion_paradigm": "memory",
+    "response_generator": "simple",
+    "decision_protocol": "majority_consensus",
+    "visible_turns_in_memory": 1,
+    "debate_rounds": 2,
+    "concurrent_api_requests": 250,
+    "use_baseline": false,
+    "use_chain_of_thought": true,
+    "num_agents": 3,
+    "num_neutral_agents": 0,
+    "agent_generator": "expert",
+    "agent_generators_list": [],
+    "trust_remote_code": false,
+    "use_ablation": false,
+    "shuffle_input_samples": true,
+    "all_agents_generate_first_draft": false,
+    "all_agents_generate_draft": false,
+    "voting_protocols_with_alterations": false,
+    "calculate_persona_diversity": true,
+    "judge_intervention": null,
+    "judge_metric": null,
+    "judge_api_key": "-",
+    "judge_always_intervene": false,
+    "input_json_file_path": "data/datasets/mmlu_pro.json",
+    "task_instruction_prompt": "Answer the provided question by choosing one option. Include the letter corresponding to your answer in the solution."
+  },
+  "runs": [
+    {
+      "output_json_file_path": "exp3/out/output_mmlu_pro_default.json",
+      "num_samples": 373
+    },
+    {
+      "output_json_file_path": "exp3/out/output_mmlu_pro_regenerate_always.json",
+      "num_samples": 373,
+      "judge_intervention": "regenerate",
+      "judge_metric": "multichoice",
+      "judge_always_intervene": true
+    },
+    {
+      "output_json_file_path": "exp3/out/output_mmlu_pro_policy_always.json",
+      "num_samples": 373,
+      "judge_intervention": "policy",
+      "judge_metric": "multichoice",
+      "judge_always_intervene": true
+    },
+    {
+      "output_json_file_path": "exp3/out/output_mmlu_pro_regenerate.json",
+      "num_samples": 373,
+      "judge_intervention": "regenerate",
+      "judge_metric": "multichoice"
+    },
+    {
+      "output_json_file_path": "exp3/out/output_mmlu_pro_policy.json",
+      "num_samples": 373,
+      "judge_intervention": "policy",
+      "judge_metric": "multichoice"
+    },
+    {
+      "output_json_file_path": "exp3/out/output_mmlu_pro_regenerate_llmJudge.json",
+      "num_samples": 373,
+      "judge_intervention": "regenerate",
+      "judge_metric": "multichoice",
+      "judge_endpoint_url": "http://XXX:8082/v1"
+    },
+    {
+      "output_json_file_path": "exp3/out/output_mmlu_pro_policy_llmJudge.json",
+      "num_samples": 373,
+      "judge_intervention": "policy",
+      "judge_metric": "multichoice",
+      "judge_endpoint_url": "http://XXX:8082/v1"
+    }
+  ]
+}
