@@ -188,11 +188,21 @@ def average_score_per_turn(eval_data, dataset, metric_name, baseline_data = None
 
     positive_theta_indices = [i for i, theta in enumerate(total_thetas) if theta > 0]
     negative_theta_indices = [i for i, theta in enumerate(total_thetas) if theta < 0]
+    always_positive_indices = [i for i, theta in enumerate(total_thetas) if theta == 0 and scores_per_turn[i][0] == True]
+    always_negative_indices = [i for i, theta in enumerate(total_thetas) if theta == 0 and scores_per_turn[i][0] == False]
     all_theta_indices = [i for i in range(len(total_thetas))]
     
     positive_discussions = [eval_data[i] for i in positive_theta_indices]
     negative_discussions = [eval_data[i] for i in negative_theta_indices]
+    always_positive_discussions = [eval_data[i] for i in always_positive_indices]
+    always_negative_discussions = [eval_data[i] for i in always_negative_indices]
     all_discussions = [eval_data[i] for i in all_theta_indices]
+
+    print("always_positive_discussions: " + str(len(always_positive_discussions)))
+    print("always_negative_discussions: " + str(len(always_negative_discussions)))
+    print("positive_discussions: " + str(len(positive_discussions)))
+    print("negative_discussions: " + str(len(negative_discussions)))
+    print("all_discussions: " + str(len(all_discussions)))
 
     plt.figure(figsize=(10, 6))
     
