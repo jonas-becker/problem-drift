@@ -47,107 +47,11 @@ def print_overall_stats(stats_normal, stats_policy, stats_regenerate, stats_poli
         print("Average Score: " + str(stats_regenerate_judge[dataset][metric]["average_score"]))
         print("Std Dev Score: " + str(stats_regenerate_judge[dataset][metric]["std_dev_score"]))
 
-def num_drifting_samples(eval_data_normal, eval_data_policy, eval_data_regenerate, eval_data_policy_judge, eval_data_regenerate_judge):
-    fig, ax = plt.subplots()
-    ax.set_ylabel('Count', fontsize=15)
-    x = np.arange(5)
-    ax.set_xlim(-0.5, 4.5)
-    ax.set_ylim(0, 65)
-    ax.set_xticks(x)
-
-    print(len(eval_data_policy))
-    eval_data_methods = [eval_data_normal, eval_data_policy_judge, eval_data_regenerate_judge, eval_data_policy, eval_data_regenerate]
-    dataset = "mmlu_pro"
- 
-    for k, eval_data_triple in enumerate(eval_data_methods):
-        drifting_samples_indices = [set(), set(), set()]
-        for j in range(3):
-            eval_data = eval_data_triple[dataset][j]
-            scores_per_turn, thetas_per_turn, total_thetas, solutions_per_turn = [], [], [], []
-
-            for index, sample in enumerate(eval_data):
-                scores, thetas, total_theta, solutions = FocusCalculator.calculate_per_turn(sample)
-                thetas_per_turn.append(thetas)
-                scores_per_turn.append(scores)
-                solutions_per_turn.append(solutions)
-                total_thetas.append(total_theta)
-
-                if scores[0] > scores[-1]:
-                    drifting_samples_indices[j].add(index)
-
-        
-        drifting_samples = np.mean([len(list(drifting_samples_indices[i])) for i in range(3)])
-        drifting_samples_std_dev = np.std([len(list(drifting_samples_indices[i])) for i in range(3)])
-        print(f"{k}: Drifting: {drifting_samples}, Std-Dev: {drifting_samples_std_dev}, {drifting_samples/len(eval_data)*100:.2f}% of total samples")
-
-def average_score_per_turn(eval_data, dataset, metric_name, baseline_data = None):
-    scores_per_turn, thetas_per_turn, total_thetas, solutions_per_turn = [], [], [], []
-
-    for sample in eval_data:
-        scores, thetas, total_theta, solutions = FocusCalculator.calculate_per_turn(sample)
-        thetas_per_turn.append(thetas)
-        scores_per_turn.append(scores)
-        solutions_per_turn.append(solutions)
-        total_thetas.append(total_theta)
-
-    positive_theta_indices = [i for i, theta in enumerate(total_thetas) if theta > 0]
-    negative_theta_indices = [i for i, theta in enumerate(total_thetas) if theta < 0]
-    all_theta_indices = [i for i in range(len(total_thetas))]
-    
-    positive_discussions = [eval_data[i] for i in positive_theta_indices]
-    negative_discussions = [eval_data[i] for i in negative_theta_indices]
-    all_discussions = [eval_data[i] for i in all_theta_indices]
-
-    plt.figure(figsize=(10, 6))
-    
-    avg_scores_per_turn_positive = [0] * NUM_TURNS
-    for turn in range(NUM_TURNS):
-        scores = [discussion["votesEachTurn"][str(turn+1)]["alterations"]["public"]["score"][metrics[os.path.splitext(os.path.basename(sample["dataset"]))[0]][0]+"-public"] for discussion in positive_discussions if str(turn+1) in discussion["votesEachTurn"]]
-        scores = [0 if score is None else score for score in scores]
-        if scores:
-            avg_scores_per_turn_positive[turn] = np.mean(scores)
-    plt.plot(range(1, NUM_TURNS + 1), avg_scores_per_turn_positive, marker='o', linestyle='-', color='royalblue', label="Improving Discussions")
-    plt.text(NUM_TURNS-0.2, avg_scores_per_turn_positive[-1], str(len(positive_discussions)) + " discussions", color='royalblue', ha='right')
-    avg_scores_per_turn_negative = [0] * NUM_TURNS
-    for turn in range(NUM_TURNS):
-        scores = [discussion["votesEachTurn"][str(turn+1)]["alterations"]["public"]["score"][metrics[os.path.splitext(os.path.basename(sample["dataset"]))[0]][0]+"-public"] for discussion in negative_discussions if str(turn+1) in discussion["votesEachTurn"]]
-        scores = [0 if score is None else score for score in scores]
-        if scores:
-            avg_scores_per_turn_negative[turn] = np.mean(scores)
-    plt.plot(range(1, NUM_TURNS + 1), avg_scores_per_turn_negative, marker='o', linestyle='-', color='indianred', label="Worsening Discussions")
-    plt.text(NUM_TURNS-0.2, avg_scores_per_turn_negative[-1], str(len(negative_discussions)) + " discussions", color='indianred', ha='right')
-    avg_scores_per_turn_all = [0] * NUM_TURNS
-    for turn in range(NUM_TURNS):
-        scores = [discussion["votesEachTurn"][str(turn+1)]["alterations"]["public"]["score"][metrics[os.path.splitext(os.path.basename(sample["dataset"]))[0]][0]+"-public"] for discussion in all_discussions if str(turn+1) in discussion["votesEachTurn"]]
-        scores = [0 if score is None else score for score in scores]
-        if scores:
-            avg_scores_per_turn_all[turn] = np.mean(scores)
-    plt.plot(range(1, NUM_TURNS + 1), avg_scores_per_turn_all, marker='o', linestyle='-', color='grey', label="All Discussions")
-    plt.text(NUM_TURNS-0.2, avg_scores_per_turn_all[-1], str(len(all_discussions)) + " discussions", color='grey', ha='right')
-    print("avg_scores_per_turn_all: " + str(avg_scores_per_turn_all))
-    print("avg_scores_per_turn_positive: " + str(avg_scores_per_turn_positive))
-    print("avg_scores_per_turn_negative: " + str(avg_scores_per_turn_negative))
-
-    if baseline_data:
-        print("baseline data with none scores: " + str(len([sample for sample in baseline_data if sample["scores"][metrics[os.path.splitext(os.path.basename(sample["dataset"]))[0]][0]] is None])))
-        average_baseline_score = np.mean([sample["scores"][metrics[os.path.splitext(os.path.basename(sample["dataset"]))[0]][0]] for sample in baseline_data if sample["scores"][metrics[os.path.splitext(os.path.basename(sample["dataset"]))[0]][0]] is not None])
-        plt.axhline(average_baseline_score, color='black', linestyle='--', label='Single-Agent CoT')
-
-    plt.xlabel('Turn')
-    plt.ylabel(f'Average {metric_name}')
-    plt.title(f'Performance per Turn for {format(dataset)}')
-    plt.grid(True)
-    plt.legend(loc='lower left')
-    plt.xticks(range(1, NUM_TURNS + 1))
-    plt.ylim(-0.05, 1.05)
-    plt.savefig(os.path.join("exp2/figures", f"average_score_per_turn_{dataset}.pdf"))
-    plt.close()
-
 def successful_samples(eval_data_normal, eval_data_policy, eval_data_regenerate, eval_data_policy_judge, eval_data_regenerate_judge):
     fig, ax = plt.subplots()
     ax.set_ylabel('% of 373 Samples', fontsize=15)
-    x = np.arange(3)
-    ax.set_xlim(-0.5, 2.5)
+    x = np.arange(5)
+    ax.set_xlim(-0.5, 4.5)
     ax.set_ylim(80, 100)
     ax.set_xticks(x)
     width = 0.35
@@ -157,7 +61,7 @@ def successful_samples(eval_data_normal, eval_data_policy, eval_data_regenerate,
     all_recovered_performance_differences = [[], [], []]
 
     print(len(eval_data_policy))
-    eval_data_methods = [eval_data_normal, eval_data_policy, eval_data_regenerate]
+    eval_data_methods = [eval_data_normal, eval_data_policy_judge, eval_data_regenerate_judge, eval_data_policy, eval_data_regenerate]
     dataset = "mmlu_pro"
  
     for k, eval_data_triple in enumerate(eval_data_methods):
@@ -240,7 +144,7 @@ def successful_samples(eval_data_normal, eval_data_policy, eval_data_regenerate,
         rects2 = ax.bar(x[k], successful_samples_percentage, width, yerr=successful_samples_percentage_std_dev, label='Never Drifted', color='royalblue', capsize=3, alpha=0.7)
         rects3 = ax.bar(x[k], recovering_samples_percentage, width, yerr=recovering_samples_percentage_std_dev, label='Recovered from Drift', color='seagreen', capsize=3, alpha=0.7, bottom=successful_samples_percentage)
 
-        if k == 0:
+        if k == 0 or k == 2:
             ax.axvline(x=x[k] + width/2 + 0.3, color='black', linestyle='--', alpha=0.3)
     
         # Add value labels on top of each bar
@@ -262,12 +166,12 @@ def successful_samples(eval_data_normal, eval_data_policy, eval_data_regenerate,
     unique_handles = [handles[labels.index(label)] for label in unique_labels]
     ax.legend(unique_handles, unique_labels, fontsize=15, loc='lower right')
 
-    ax.set_xticklabels(["MAD\n(Baseline)", "DRIFTPolicy", "Regenerate"])
-    plt.xticks(rotation=0, ha='center', fontsize=15)
+    ax.set_xticklabels(["Multi-Agent\nBaseline", "Policy\n(Judge)", "Regenerate\n(Judge)", "Policy\n(Oracle)", "Regenerate\n(Oracle)"])
+    plt.xticks(rotation=45, ha='right', fontsize=15)
     plt.yticks(fontsize=15)
     plt.tight_layout()
     ax.set_title('Successful Samples for MMLU-Pro', fontsize=15)
-    plt.savefig(os.path.join("exp2/figures", "successful_samples.pdf"))
+    plt.savefig(os.path.join("exp3/figures", "successful_samples.pdf"))
     plt.close()
 
 def calculate_avg_turning_points(eval_data):
@@ -312,7 +216,7 @@ def mallm_vs_baseline(stats):
 
     plt.bar(0, avg_score[0], width, label='CoT', color='grey', yerr=std_dev_score[0], alpha=0.7, capsize=4)
 
-    #plt.ylim(0.3, 0.5)
+    plt.ylim(0.3, 0.7)
     for i in range(len(x)):
         if i == 0 or i == 1:
             plt.axvline(x=x[i] + 0.5, color='black', linestyle='--', alpha=0.3)
@@ -328,7 +232,7 @@ def mallm_vs_baseline(stats):
     plt.grid(True, axis='y')
     plt.tight_layout()
     
-    plt.savefig(os.path.join("exp2/figures", "mallm_vs_baseline.pdf"))
+    plt.savefig(os.path.join("exp3/figures", "mallm_vs_baseline.pdf"))
     plt.close()
 
 def get_eval_stats_and_eval_data(dataset_to_process = None):
@@ -351,23 +255,27 @@ def get_experiment_stats_and_eval_data(llm_judge = False, intervention = "policy
     if dataset_to_process:
         datasets = [dataset_to_process]
 
-    exp_dir = "exp2"
+    exp_dir = "exp3"
     stats = {dataset: {} for dataset in datasets}
     eval_data = {dataset: {} for dataset in datasets}
     eval_data_seperated = {dataset: [] for dataset in datasets}
+    num_agents = 3
     llm_judge_str = ""
     if llm_judge:
         llm_judge_str = "_llmJudge"
     if intervention:
         intervention_str = "_" + intervention
+        if "policy" in intervention:
+            num_agents = 4
     else:
         intervention_str = ""
-    
+
     if baseline:
         intervention_str = "_baseline"
         exp_dir = "exp1"
 
     for dataset in datasets:
+        print( f"Processing {exp_dir}/out/output_{dataset}{intervention_str}{llm_judge_str}")
         with open(f"{exp_dir}/out/output_{dataset}{intervention_str}{llm_judge_str}_repeat1-stats.json", "r") as f:
             stats1 = json.load(f) 
         with open(f"{exp_dir}/out/output_{dataset}{intervention_str}{llm_judge_str}_repeat2-stats.json", "r") as f:
@@ -380,47 +288,42 @@ def get_experiment_stats_and_eval_data(llm_judge = False, intervention = "policy
         avg_scores_per_turn = [0] * NUM_TURNS
         std_dev_per_turn = [0] * NUM_TURNS
         avg_clockSeconds1, avg_clockSeconds2, avg_clockSeconds3 = 0, 0, 0
+        ends_of_turns = range(2, 7*num_agents, num_agents)
 
         if not baseline:
             with open(f"{exp_dir}/out/output_{dataset}{intervention_str}{llm_judge_str}_repeat1-eval.json", "r") as f:
                 eval_data1 = json.load(f)
                 turning_points1 = calculate_avg_turning_points(eval_data1)
                 avg_scores_per_turn1 = [0] * NUM_TURNS
-                for turn in range(NUM_TURNS):
-                    scores = [discussion["votesEachTurn"][str(turn+1)]["alterations"]["public"]["score"][metrics[dataset][0]+"-public"] for discussion in eval_data1]
-                    scores = [0 if score is None else score for score in scores]
-                    if scores:
-                        avg_scores_per_turn1[turn] = np.mean(scores)
-                    avg_clockSeconds1 = np.mean([discussion["clockSeconds"] for discussion in eval_data1])
+                scores = [[[message["scores"][metrics[dataset][0]] for message in discussion["globalMemory"] if message["turn"] == turn and message.get("scores") is not None] for discussion in eval_data1] for turn in range(1, NUM_TURNS + 1)]
+                for i, s in enumerate(scores):
+                    avg_scores_per_turn1[i] = np.mean(s)
+                avg_clockSeconds1 = np.mean([discussion["clockSeconds"] for discussion in eval_data1])
             with open(f"{exp_dir}/out/output_{dataset}{intervention_str}{llm_judge_str}_repeat2-eval.json", "r") as f:
                 eval_data2 = json.load(f) 
                 turning_points2 = calculate_avg_turning_points(eval_data2)
                 avg_scores_per_turn2 = [0] * NUM_TURNS
-                for turn in range(NUM_TURNS):
-                    scores = [discussion["votesEachTurn"][str(turn+1)]["alterations"]["public"]["score"][metrics[dataset][0]+"-public"] for discussion in eval_data2]
-                    scores = [0 if score is None else score for score in scores]
-                    if scores:
-                        avg_scores_per_turn2[turn] = np.mean(scores)
-                    avg_clockSeconds2 = np.mean([discussion["clockSeconds"] for discussion in eval_data2])
+                scores = [[[message["scores"][metrics[dataset][0]] for message in discussion["globalMemory"] if message["turn"] == turn and message.get("scores") is not None] for discussion in eval_data2] for turn in range(1, NUM_TURNS + 1)]
+                for i, s in enumerate(scores):
+                    avg_scores_per_turn2[i] = np.mean(s)
+                avg_clockSeconds2 = np.mean([discussion["clockSeconds"] for discussion in eval_data2])
             with open(f"{exp_dir}/out/output_{dataset}{intervention_str}{llm_judge_str}_repeat3-eval.json", "r") as f:
                 eval_data3 = json.load(f) 
                 turning_points3 = calculate_avg_turning_points(eval_data3)
                 avg_scores_per_turn3 = [0] * NUM_TURNS
-                for turn in range(NUM_TURNS):
-                    scores = [discussion["votesEachTurn"][str(turn+1)]["alterations"]["public"]["score"][metrics[dataset][0]+"-public"] for discussion in eval_data3]
-                    scores = [0 if score is None else score for score in scores]
-                    if scores:
-                        avg_scores_per_turn3[turn] = np.mean(scores)
-                    avg_clockSeconds3 = np.mean([discussion["clockSeconds"] for discussion in eval_data3])
+                scores = [[[message["scores"][metrics[dataset][0]] for message in discussion["globalMemory"] if message["turn"] == turn and message.get("scores") is not None] for discussion in eval_data3] for turn in range(1, NUM_TURNS + 1)]
+                for i, s in enumerate(scores):
+                    avg_scores_per_turn3[i] = np.mean(s)
+                avg_clockSeconds3 = np.mean([discussion["clockSeconds"] for discussion in eval_data3])
 
             eval_data[dataset] = eval_data1 + eval_data2 + eval_data3
             eval_data_seperated[dataset] = [eval_data1, eval_data2, eval_data3]
         
-            for turn in range(NUM_TURNS):
+            for i in range(1, NUM_TURNS + 1):
                 # Get scores for each run at this turn
-                scores1 = [discussion["votesEachTurn"][str(turn+1)]["alterations"]["public"]["score"][metrics[dataset][0]+"-public"] for discussion in eval_data1]
-                scores2 = [discussion["votesEachTurn"][str(turn+1)]["alterations"]["public"]["score"][metrics[dataset][0]+"-public"] for discussion in eval_data2]
-                scores3 = [discussion["votesEachTurn"][str(turn+1)]["alterations"]["public"]["score"][metrics[dataset][0]+"-public"] for discussion in eval_data3]
+                scores1 = [[message["scores"][metrics[dataset][0]] for message in discussion["globalMemory"] if message["turn"] == i and message.get("scores") is not None] for discussion in eval_data1]
+                scores2 = [[message["scores"][metrics[dataset][0]] for message in discussion["globalMemory"] if message["turn"] == i and message.get("scores") is not None] for discussion in eval_data2]
+                scores3 = [[message["scores"][metrics[dataset][0]] for message in discussion["globalMemory"] if message["turn"] == i and message.get("scores") is not None] for discussion in eval_data3]
                 
                 # Replace None with 0
                 scores1 = [0 if score is None else score for score in scores1]
@@ -433,8 +336,8 @@ def get_experiment_stats_and_eval_data(llm_judge = False, intervention = "policy
                 mean3 = np.mean(scores3) if scores3 else 0
                 
                 # Calculate overall mean and std dev across runs
-                avg_scores_per_turn[turn] = np.mean([mean1, mean2, mean3])
-                std_dev_per_turn[turn] = np.std([mean1, mean2, mean3])
+                avg_scores_per_turn[i-1] = np.mean([mean1, mean2, mean3])
+                std_dev_per_turn[i-1] = np.std([mean1, mean2, mean3])
 
         overall_stats = {} 
         for metric in stats1:
@@ -449,55 +352,15 @@ def get_experiment_stats_and_eval_data(llm_judge = False, intervention = "policy
                 "std_dev_scores_per_turn": std_dev_per_turn,
                 "avg_clockSeconds": (avg_clockSeconds1 + avg_clockSeconds2 + avg_clockSeconds3) / 3
             }
+            print(overall_stats[metric])
 
         stats[dataset] = overall_stats
 
-    output_path = f"exp2/figures/_eval_{dataset}_{intervention}{llm_judge_str}_stats.json"
+    output_path = f"exp3/figures/_eval_{dataset}_{intervention}{llm_judge_str}_stats.json"
     with open(output_path, "w") as f:
         json.dump(stats, f, indent=4)
 
     return stats, eval_data, eval_data_seperated
-
-def get_judge_accuracy_rates(eval_data_policy_judge):
-    tp = []
-    tn = []
-    fp = []
-    fn = []
-
-    eval_data = eval_data_policy_judge["mmlu_pro"]
-
-    for sample in eval_data:
-        _, thetas, _, _ = FocusCalculator.calculate_per_turn(sample)
-        thetas = thetas[1:]
-        judgements = sample["judgements"]
-        for i, judgement in enumerate(judgements):
-            if judgement is True or judgement is None:
-                if thetas[i] >= 0:
-                    tn.append(1)
-                else:
-                    fn.append(1)
-            elif judgement is False:
-                if thetas[i] >= 0:
-                    fp.append(1)
-                else:
-                    tp.append(1)
-
-    tp = sum(tp)
-    tn = sum(tn)
-    fp = sum(fp)
-    fn = sum(fn)
-    
-    print("tp: " + str(tp))
-    print("tn: " + str(tn))
-    print("fp: " + str(fp))
-    print("fn: " + str(fn))
-    print("fp_rate: " + str(fp / (fp + tn)))
-    print("fn_rate: " + str(fn / (fn + tp)))
-    print("precision: " + str(tp / (tp + fp)))
-    print("recall: " + str(tp / (tp + fn)))
-    print("f1: " + str(2 * tp / (2 * tp + fp + fn)))
-    print("specificity: " + str(tn / (tn + fp)))
-    print("accuracy: " + str((tp + tn) / (tp + tn + fp + fn)))
 
 def main():
 
@@ -511,12 +374,9 @@ def main():
     stats_policy_judge, eval_data_policy_judge, eval_data_policy_judge_sep = get_experiment_stats_and_eval_data(llm_judge = True, intervention = "policy", dataset_to_process = "mmlu_pro")
     stats_regenerate_judge, _, eval_data_regenerate_judge_sep = get_experiment_stats_and_eval_data(llm_judge = True, intervention = "regenerate", dataset_to_process = "mmlu_pro")
 
-    average_score_per_turn(eval_data_policy_judge["mmlu_pro"], "mmlu_pro", metrics["mmlu_pro"][0])
     print_overall_stats(stats_normal, stats_policy, stats_regenerate, stats_policy_judge, stats_regenerate_judge)
-    num_drifting_samples(eval_data_normal_sep, eval_data_policy_sep, eval_data_regenerate_sep, eval_data_policy_judge_sep, eval_data_regenerate_judge_sep)
     successful_samples(eval_data_normal_sep, eval_data_policy_sep, eval_data_regenerate_sep, eval_data_policy_judge_sep, eval_data_regenerate_judge_sep)
     mallm_vs_baseline([stats_baseline, stats_normal, stats_policy_judge, stats_regenerate_judge])
-    get_judge_accuracy_rates(eval_data_policy_judge)
 
 if __name__ == "__main__":
     fire.Fire(main)

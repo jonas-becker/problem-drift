@@ -24,13 +24,14 @@ class FocusCalculator:
         scores_per_turn = []
         theta_per_turn = []
         solutions_per_turn = []
-        for i, turn in enumerate(votesEachTurn):
-            scores_per_turn.append(votesEachTurn[turn]['alterations']['public']['score'][metrics[os.path.splitext(os.path.basename(sample["dataset"]))[0]][0] + "-public"])
-            solutions_per_turn.append(votesEachTurn[turn]['alterations']['public']['final_answer'])
-            if scores_per_turn[-1] is None:
-                scores_per_turn[-1] = 0
-            if len(scores_per_turn) > 1:
-                theta_per_turn.append(scores_per_turn[-1] - scores_per_turn[-2])
-            else: 
-                theta_per_turn.append(0)
+        if votesEachTurn is not None:
+            for i, turn in enumerate(votesEachTurn):
+                scores_per_turn.append(votesEachTurn[turn]['alterations']['public']['score'][metrics[os.path.splitext(os.path.basename(sample["dataset"]))[0]][0] + "-public"])
+                solutions_per_turn.append(votesEachTurn[turn]['alterations']['public']['final_answer'])
+                if scores_per_turn[-1] is None:
+                    scores_per_turn[-1] = 0
+                if len(scores_per_turn) > 1:
+                    theta_per_turn.append(scores_per_turn[-1] - scores_per_turn[-2])
+                else: 
+                    theta_per_turn.append(0)
         return scores_per_turn, theta_per_turn, sum(theta_per_turn), solutions_per_turn

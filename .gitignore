@@ -6,12 +6,11 @@ data/datasets/*
 *.bak
 *.dir
 exp0/out/
-exp0/memory_bucket/
 exp0/figures/
 exp1/out/
-exp1/memory_bucket/
 exp1/figures/
 exp2/out/
-exp2/memory_bucket/
 exp2/figures/
+exp3/out/
+exp3/figures/
 log.txt
