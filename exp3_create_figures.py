@@ -207,6 +207,12 @@ def mallm_vs_baseline(stats):
         std_dev_scores_per_turn1.append(stats[i]["mmlu_pro"][metric]["std_dev_scores_per_turn"][0])
         std_dev_scores_per_turn7.append(stats[i]["mmlu_pro"][metric]["std_dev_scores_per_turn"][6])
     
+        if not dataset == "Single":
+            print("----- Scores delta turn 7 - turn1")
+            print(dataset)
+            print("delta: " + str(round(stats[i]["mmlu_pro"][metric]["avg_scores_per_turn_delta"], 4)))
+            print("std_dev: " + str(round(stats[i]["mmlu_pro"][metric]["avg_scores_per_turn_delta_std_dev"], 4)))
+
     # Plot bars
     width = 0.25
     x = np.arange(0,len(methods))
@@ -287,6 +293,9 @@ def get_experiment_stats_and_eval_data(llm_judge = False, intervention = "policy
         turning_points1, turning_points2, turning_points3 = 0, 0, 0
         avg_scores_per_turn = [0] * NUM_TURNS
         std_dev_per_turn = [0] * NUM_TURNS
+        avg_scores_per_turn_delta = [0] * NUM_TURNS
+        avg_scores_per_turn_delta_std_dev = [0] * NUM_TURNS
+        avg_scores_per_turn_individual = [[0] * 3 for _ in range(NUM_TURNS)]
         avg_clockSeconds1, avg_clockSeconds2, avg_clockSeconds3 = 0, 0, 0
         ends_of_turns = range(2, 7*num_agents, num_agents)
 
@@ -337,7 +346,11 @@ def get_experiment_stats_and_eval_data(llm_judge = False, intervention = "policy
                 
                 # Calculate overall mean and std dev across runs
                 avg_scores_per_turn[i-1] = np.mean([mean1, mean2, mean3])
+                avg_scores_per_turn_individual[i-1] = [mean1, mean2, mean3]
                 std_dev_per_turn[i-1] = np.std([mean1, mean2, mean3])
+            
+            avg_scores_per_turn_delta = np.mean([avg_scores_per_turn_individual[6][0] - avg_scores_per_turn_individual[0][0], avg_scores_per_turn_individual[6][1] - avg_scores_per_turn_individual[0][1], avg_scores_per_turn_individual[6][2] - avg_scores_per_turn_individual[0][2]])
+            avg_scores_per_turn_delta_std_dev = np.std([avg_scores_per_turn_individual[6][0] - avg_scores_per_turn_individual[0][0], avg_scores_per_turn_individual[6][1] - avg_scores_per_turn_individual[0][1], avg_scores_per_turn_individual[6][2] - avg_scores_per_turn_individual[0][2]])
 
         overall_stats = {} 
         for metric in stats1:
@@ -349,17 +362,17 @@ def get_experiment_stats_and_eval_data(llm_judge = False, intervention = "policy
                 "avg_turning_points": (turning_points1 + turning_points2 + turning_points3) / 3,
                 "std_dev_turning_points": np.std([turning_points1, turning_points2, turning_points3]),
                 "avg_scores_per_turn": avg_scores_per_turn,
+                "avg_scores_per_turn_delta": avg_scores_per_turn_delta,
+                "avg_scores_per_turn_delta_std_dev": avg_scores_per_turn_delta_std_dev,
                 "std_dev_scores_per_turn": std_dev_per_turn,
                 "avg_clockSeconds": (avg_clockSeconds1 + avg_clockSeconds2 + avg_clockSeconds3) / 3
             }
-            print(overall_stats[metric])
 
         stats[dataset] = overall_stats
 
     output_path = f"exp3/figures/_eval_{dataset}_{intervention}{llm_judge_str}_stats.json"
     with open(output_path, "w") as f:
         json.dump(stats, f, indent=4)
-
     return stats, eval_data, eval_data_seperated
 
 def main():
