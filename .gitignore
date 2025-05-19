@@ -14,3 +14,9 @@ exp2/figures/
 exp3/out/
 exp3/figures/
 log.txt
+exp1/out_exp1_llama.zip
+exp1/out_exp1_qwen.zip
+exp2/out_exp2_llama.zip
+exp3/out_exp3_llama.zip
+exp2/out_exp2_qwen.zip
+exp3/out_exp3_qwen.zip

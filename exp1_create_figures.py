@@ -188,8 +188,8 @@ def average_score_per_turn(eval_data, dataset, metric_name, baseline_data = None
 
     positive_theta_indices = [i for i, theta in enumerate(total_thetas) if theta > 0]
     negative_theta_indices = [i for i, theta in enumerate(total_thetas) if theta < 0]
-    always_positive_indices = [i for i, theta in enumerate(total_thetas) if theta == 0 and scores_per_turn[i][0] == True]
-    always_negative_indices = [i for i, theta in enumerate(total_thetas) if theta == 0 and scores_per_turn[i][0] == False]
+    always_positive_indices = [i for i, theta in enumerate(total_thetas) if theta == 0 and scores_per_turn[i][0] > 0.7]
+    always_negative_indices = [i for i, theta in enumerate(total_thetas) if theta == 0 and scores_per_turn[i][0] < 0.7]
     all_theta_indices = [i for i in range(len(total_thetas))]
     
     positive_discussions = [eval_data[i] for i in positive_theta_indices]

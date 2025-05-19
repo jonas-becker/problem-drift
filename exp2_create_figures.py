@@ -215,21 +215,27 @@ def successful_samples(eval_data_normal, eval_data_policy, eval_data_regenerate,
 
         drifting_samples = np.mean([len(list(drifting_samples_indices[i])) for i in range(3)])
         drifting_samples_std_dev = np.std([len(list(drifting_samples_indices[i])) for i in range(3)])
-        print(f"Drifting: {drifting_samples}, Std-Dev: {drifting_samples_std_dev}, {drifting_samples/total_samples*100:.2f}% of total samples")
+        drifting_samples_percentage = drifting_samples/total_samples*100    
+        drifting_samples_percentage_std_dev = np.std([len(list(drifting_samples_indices[i]))/total_samples*100 for i in range(3)])
+        print(f"Drifting: {drifting_samples}, Std-Dev: {drifting_samples_std_dev}, {drifting_samples_percentage:.2f}% of total samples (+-{drifting_samples_percentage_std_dev:.2f}%)")
 
         successful_samples = np.mean([len(eval_data_triple[dataset][i]) - len(list(drifting_samples_indices[i])) for i in range(3)])
         successful_samples_std_dev = np.std([len(eval_data_triple[dataset][i]) - len(list(drifting_samples_indices[i])) for i in range(3)])
         successful_samples_percentage = successful_samples/total_samples*100
         successful_samples_percentage_std_dev = np.std([(len(eval_data_triple[dataset][i]) - len(list(drifting_samples_indices[i])))/total_samples*100 for i in range(3)])
-        print(f"Successful: {successful_samples}, Std-Dev: {successful_samples_std_dev}, {successful_samples_percentage:.2f}% of total samples")
+        print(f"Successful: {successful_samples}, Std-Dev: {successful_samples_std_dev}, {successful_samples_percentage:.2f}% of total samples (+-{successful_samples_percentage_std_dev:.2f}%)")
         
         recovering_samples = np.mean([len(recovering_indices[i]) for i in range(3)])
         recovering_samples_std_dev = np.std([len(recovering_indices[i]) for i in range(3)])
         recovering_samples_percentage = recovering_samples/total_samples*100
         recovering_samples_percentage_std_dev = np.std([len(recovering_indices[i])/total_samples*100 for i in range(3)])
-        print(f"Recovering: {recovering_samples}, Std-Dev: {recovering_samples_std_dev}, {recovering_samples_percentage:.2f}% of total samples")
+        print(f"Recovering: {recovering_samples}, Std-Dev: {recovering_samples_std_dev}, {recovering_samples_percentage:.2f}% of total samples (+-{recovering_samples_percentage_std_dev:.2f}%)")
 
-        print(f"All good samples: {successful_samples+recovering_samples}, Std-Dev: {np.std([successful_samples+recovering_samples for i in range(3)])}, {(successful_samples+recovering_samples)/total_samples*100:.2f}% of total samples")
+        successful_or_recovering_samples = np.mean([successful_samples+recovering_samples for i in range(3)])
+        successful_or_recovering_samples_std_dev = np.std([successful_samples+recovering_samples for i in range(3)])
+        successful_or_recovering_samples_percentage = successful_or_recovering_samples/total_samples*100
+        successful_or_recovering_samples_percentage_std_dev = np.std([(successful_samples+recovering_samples)/total_samples*100 for i in range(3)])
+        print(f"All good samples: {successful_or_recovering_samples}, Std-Dev: {successful_or_recovering_samples_std_dev}, {successful_or_recovering_samples_percentage:.2f}% of total samples (+-{successful_or_recovering_samples_percentage_std_dev:.2f}%)")
         
         print(f"Avg. number of turns to recover: {np.mean([np.mean(turns_to_recover[i]) for i in range(3)])} turns, Std-Dev: {np.std([np.mean(turns_to_recover[i]) for i in range(3)])}")
         print(f"Avg. drift strength: {np.mean([np.mean(drift_strengths[i]) for i in range(3)])}, Std-Dev: {np.std([np.mean(drift_strengths[i]) for i in range(3)])}")
