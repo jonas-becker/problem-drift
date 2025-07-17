@@ -177,19 +177,23 @@ def corr_heatmap_with_pval(df, method = 'pearson', figsize=(14, 6), filename=Non
     plt.close()
 
 def average_score_per_turn(eval_data, dataset, metric_name, baseline_data = None):
-    scores_per_turn, thetas_per_turn, total_thetas, solutions_per_turn = [], [], [], []
+    scores_per_turn, thetas_per_turn, total_thetas, solutions_per_turn, last_turn_scores = [], [], [], [], []
 
     for sample in eval_data:
         scores, thetas, total_theta, solutions = FocusCalculator.calculate_per_turn(sample)
         thetas_per_turn.append(thetas)
         scores_per_turn.append(scores)
+        last_turn_scores.append(scores[-1])
         solutions_per_turn.append(solutions)
         total_thetas.append(total_theta)
 
+    avg_last_turn_score = np.mean(last_turn_scores)
+    print("avg_last_turn_score (using as threshold): " + str(avg_last_turn_score))
+
     positive_theta_indices = [i for i, theta in enumerate(total_thetas) if theta > 0]
     negative_theta_indices = [i for i, theta in enumerate(total_thetas) if theta < 0]
-    always_positive_indices = [i for i, theta in enumerate(total_thetas) if theta == 0 and scores_per_turn[i][0] > 0.7]
-    always_negative_indices = [i for i, theta in enumerate(total_thetas) if theta == 0 and scores_per_turn[i][0] < 0.7]
+    always_positive_indices = [i for i, theta in enumerate(total_thetas) if theta == 0 and scores_per_turn[i][0] > avg_last_turn_score]
+    always_negative_indices = [i for i, theta in enumerate(total_thetas) if theta == 0 and scores_per_turn[i][0] < avg_last_turn_score]
     all_theta_indices = [i for i in range(len(total_thetas))]
     
     positive_discussions = [eval_data[i] for i in positive_theta_indices]
@@ -282,13 +286,16 @@ def mallm_vs_baseline():
         std_dev_scores_per_turn1.append(stats[dataset][metric]["std_dev_scores_per_turn"][0])
         std_dev_scores_per_turn7.append(stats[dataset][metric]["std_dev_scores_per_turn"][6])
         
+
+    avg_score_per_turn7 = np.mean(avg_scores_per_turn7)
+    print("avg_score_per_turn7 (using as threshold for always positive/negative discussions): " + str(avg_score_per_turn7))
     # Plot bars
     x = np.arange(len(datasets))
     width = 0.25
     # Plot turn 2 and turn 7 scores
-    plt.bar(x - width, baseline_scores, width, label='Single-Agent CoT', color='grey', yerr=error_bars_baseline, alpha=0.7, capsize=4)
-    plt.bar(x, avg_scores_per_turn1, width, label='MALLM Turn 1', color='lightgreen', yerr=std_dev_scores_per_turn1, alpha=0.7, capsize=4)
-    plt.bar(x + width, avg_scores_per_turn7, width, label='MALLM Turn 7', color='darkgreen', yerr=std_dev_scores_per_turn7, alpha=0.7, capsize=4)
+    plt.bar(x - width, baseline_scores, width, label='Single-Agent CoT', color='grey', yerr=error_bars_baseline, alpha=avg_score_per_turn7, capsize=4)
+    plt.bar(x, avg_scores_per_turn1, width, label='MALLM Turn 1', color='lightgreen', yerr=std_dev_scores_per_turn1, alpha=avg_score_per_turn7, capsize=4)
+    plt.bar(x + width, avg_scores_per_turn7, width, label='MALLM Turn 7', color='darkgreen', yerr=std_dev_scores_per_turn7, alpha=avg_score_per_turn7, capsize=4)
 
     plt.xlabel('Dataset')
     plt.ylabel('Average Performance')
@@ -349,6 +356,7 @@ def successful_samples():
         recovered_performance_differences = [[], [], []]
         drift_strengths = [[], [], []]
         drift_strengths_recovered = [[], [], []]
+        last_turn_scores = [[], [], []]
         datasets.append(format(dataset))
         
         for j in range(3):
@@ -362,6 +370,7 @@ def successful_samples():
                 scores_per_turn.append(scores)
                 solutions_per_turn.append(solutions)
                 total_thetas.append(total_theta)
+                last_turn_scores[j].append(scores[-1])
 
                 highest_score = 0
                 past_score = 1
@@ -395,7 +404,10 @@ def successful_samples():
                 if drift_strength > 0:
                     drift_strengths[j].append(drift_strength)
                     all_drift_strengths[j].append(drift_strength)
-        
+
+        avg_last_turn_score = np.mean([np.mean(last_turn_scores[j]) for j in range(3)])
+        print(f"avg_last_turn_score for {dataset} (using as threshold): {avg_last_turn_score}")
+
         print(f"--> {k}: " + dataset)
         total_samples = np.mean([len(eval_data_all[dataset][i]) for i in range(3)])
         total_samples_std_dev = np.std([len(eval_data_all[dataset][i]) for i in range(3)])
@@ -431,8 +443,8 @@ def successful_samples():
         print(f"Avg. Performance difference (low-new_high): {np.mean([np.mean(recovered_performance_differences[i]) for i in range(3)])}, Std-Dev: {np.std([np.mean(recovered_performance_differences[i]) for i in range(3)])}")
 
         #rects1 = ax.bar(x[k] - width/3, total_samples, width, label='Total Samples', color='grey')
-        rects2 = ax.bar(x[k], successful_samples_percentage, width, yerr=successful_samples_percentage_std_dev, label='Never Drifted', color='royalblue', capsize=3, alpha=0.7)
-        rects3 = ax.bar(x[k], recovering_samples_percentage, width, yerr=recovering_samples_percentage_std_dev, label='Recovered from Drift', color='seagreen', capsize=3, alpha=0.7, bottom=successful_samples_percentage)
+        rects2 = ax.bar(x[k], successful_samples_percentage, width, yerr=successful_samples_percentage_std_dev, label='Never Drifted', color='royalblue', capsize=3, alpha=avg_last_turn_score)
+        rects3 = ax.bar(x[k], recovering_samples_percentage, width, yerr=recovering_samples_percentage_std_dev, label='Recovered from Drift', color='seagreen', capsize=3, alpha=avg_last_turn_score, bottom=successful_samples_percentage)
 
         if k == 2 or k == 5 or k == 8:
             ax.axvline(x=x[k] + width/2 + 0.3, color='black', linestyle='--', alpha=0.3)
@@ -534,6 +546,7 @@ def get_experiment_stats_and_eval_data(baseline = False, dataset_to_process = No
         
         avg_scores_per_turn = [0] * NUM_TURNS
         std_dev_per_turn = [0] * NUM_TURNS
+        avg_tokens_per_debate = []
         if not baseline:
             for turn in range(NUM_TURNS):
                 # Get scores for each run at this turn
@@ -554,6 +567,14 @@ def get_experiment_stats_and_eval_data(baseline = False, dataset_to_process = No
                 # Calculate overall mean and std dev across runs
                 avg_scores_per_turn[turn] = np.mean([mean1, mean2, mean3])
                 std_dev_per_turn[turn] = np.std([mean1, mean2, mean3])
+
+            #print("JOINED: ", " ".join([eval_data1[0]["globalMemory"][j]["message"] for j in range(len(eval_data1[0]["globalMemory"]))]).split())
+            avg_tokens_per_debate.append(len(" ".join([eval_data1[0]["globalMemory"][j]["message"] for j in range(len(eval_data1[0]["globalMemory"]))]).split()))
+            avg_tokens_per_debate.append(len(" ".join([eval_data2[0]["globalMemory"][j]["message"] for j in range(len(eval_data2[0]["globalMemory"]))]).split()))
+            avg_tokens_per_debate.append(len(" ".join([eval_data3[0]["globalMemory"][j]["message"] for j in range(len(eval_data3[0]["globalMemory"]))]).split()))
+
+            
+            print(f"Avg. tokens per debate: {np.mean(avg_tokens_per_debate)}, Std-Dev: {np.std(avg_tokens_per_debate)}")
 
         overall_stats = {} 
         for metric in stats1:
@@ -590,6 +611,24 @@ def get_percentage_of_ties(eval_data):
                 agreements += 1
     print(f"Agreements: {agreements}, Ties: {ties}, {agreements/(agreements+ties)*100:.2f}% of total samples")
 
+
+def get_first_agreement_turns(eval_data):
+    turns = []
+    for sample in eval_data:
+        for turn in range(NUM_TURNS):
+            if sample["votesEachTurn"][str(turn+1)]["alterations"]["public"]["agreed"] is True:
+                turns.append(turn+1)
+                break
+
+    print(f"Number of samples: {len(turns)}")
+    print(f"Average first agreement turn: {np.mean(turns):.2f}, Std-Dev: {np.std(turns):.2f}")
+    print(f"Median first agreement turn: {np.median(turns):.2f}")
+    print(f"Min first agreement turn: {min(turns)}, Max first agreement turn: {max(turns)}")
+    print(f"Agreement distribution by turn:")
+    for turn in range(1, NUM_TURNS + 1):
+        count = turns.count(turn)
+        percentage = count / len(turns) * 100
+        print(f"  Turn {turn}: {count} samples ({percentage:.1f}%)")
 
 def main():
     eval_data_all = []
@@ -670,6 +709,8 @@ def main():
         }
     )
     print(f"Number of samples in multiple-choice correlation analysis: {len(combined_data)}")
+
+    get_first_agreement_turns(eval_data)
 
     mallm_vs_baseline()
     average_score_per_turn(eval_data_mulchoice, "Multiple-Choice Datasets", "Accuracy", None) # baseline_data_mulchoice
