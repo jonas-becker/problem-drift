@@ -12,6 +12,8 @@ logger = logging.getLogger("mallm")
 
 NUM_TURNS = 7
 TASKS_ORDER = ["mmlu_pro"]
+FOCUS_CALCULATOR = FocusCalculator()
+FOCUS_CALCULATOR_FUNCTION = FOCUS_CALCULATOR.calculate_per_turn_embedding_similarity
 
 
 original_print = print
@@ -66,7 +68,7 @@ def num_drifting_samples(eval_data_normal, eval_data_policy, eval_data_regenerat
             scores_per_turn, thetas_per_turn, total_thetas, solutions_per_turn = [], [], [], []
 
             for index, sample in enumerate(eval_data):
-                scores, thetas, total_theta, solutions = FocusCalculator.calculate_per_turn(sample)
+                scores, thetas, total_theta, solutions = FOCUS_CALCULATOR_FUNCTION(sample)
                 thetas_per_turn.append(thetas)
                 scores_per_turn.append(scores)
                 solutions_per_turn.append(solutions)
@@ -84,7 +86,7 @@ def average_score_per_turn(eval_data, dataset, metric_name, baseline_data = None
     scores_per_turn, thetas_per_turn, total_thetas, solutions_per_turn = [], [], [], []
 
     for sample in eval_data:
-        scores, thetas, total_theta, solutions = FocusCalculator.calculate_per_turn(sample)
+        scores, thetas, total_theta, solutions = FOCUS_CALCULATOR_FUNCTION(sample)
         thetas_per_turn.append(thetas)
         scores_per_turn.append(scores)
         solutions_per_turn.append(solutions)
@@ -172,7 +174,7 @@ def successful_samples(eval_data_normal, eval_data_policy, eval_data_regenerate,
             scores_per_turn, thetas_per_turn, total_thetas, solutions_per_turn = [], [], [], []
 
             for index, sample in enumerate(eval_data):
-                scores, thetas, total_theta, solutions = FocusCalculator.calculate_per_turn(sample)
+                scores, thetas, total_theta, solutions = FOCUS_CALCULATOR_FUNCTION(sample)
                 thetas_per_turn.append(thetas)
                 scores_per_turn.append(scores)
                 solutions_per_turn.append(solutions)
@@ -279,7 +281,7 @@ def successful_samples(eval_data_normal, eval_data_policy, eval_data_regenerate,
 def calculate_avg_turning_points(eval_data):
     turning_points = []
     for sample in eval_data:
-        _, thetas, _, _ = FocusCalculator.calculate_per_turn(sample)
+        _, thetas, _, _ = FOCUS_CALCULATOR_FUNCTION(sample)
         turning_points.append(len([theta for theta in thetas if theta != 0]))
 
     return np.mean(turning_points)
@@ -349,7 +351,7 @@ def get_eval_stats_and_eval_data(dataset_to_process = None):
         datasets = [dataset_to_process]
 
     stats = {dataset: {} for dataset in datasets}
-    eval_data = {dataset: {} for dataset in datasets}
+    {dataset: {} for dataset in datasets}
 
     for dataset in datasets:
         with open(f"exp1/out/output_{dataset}_repeat1-stats.json", "r") as f:
@@ -488,7 +490,7 @@ def get_judge_accuracy_rates(eval_data_policy_judge):
     eval_data = eval_data_policy_judge["mmlu_pro"]
 
     for sample in eval_data:
-        _, thetas, _, _ = FocusCalculator.calculate_per_turn(sample)
+        _, thetas, _, _ = FOCUS_CALCULATOR_FUNCTION(sample)
         thetas = thetas[1:]
         judgements = sample["judgements"]
         for i, judgement in enumerate(judgements):

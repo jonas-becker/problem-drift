@@ -21,7 +21,8 @@ GENERATIVE_TASKS = ["etpc", "xsum", "wmt19_de_en"]
 REASONING_TASKS = ["strategyqa", "winogrande", "aqua_rat"]
 KNOWLEDGE_TASKS = ["gpqa", "mmlu_pro", "ethics"]
 TASKS_ORDER = GENERATIVE_TASKS + REASONING_TASKS + KNOWLEDGE_TASKS + ["ifeval"]
-
+FOCUS_CALCULATOR = FocusCalculator()
+FOCUS_CALCULATOR_FUNCTION = FOCUS_CALCULATOR.calculate_per_turn_embedding_similarity
 
 original_print = print
 
@@ -180,7 +181,7 @@ def average_score_per_turn(eval_data, dataset, metric_name, baseline_data = None
     scores_per_turn, thetas_per_turn, total_thetas, solutions_per_turn, last_turn_scores = [], [], [], [], []
 
     for sample in eval_data:
-        scores, thetas, total_theta, solutions = FocusCalculator.calculate_per_turn(sample)
+        scores, thetas, total_theta, solutions = FOCUS_CALCULATOR_FUNCTION(sample)
         thetas_per_turn.append(thetas)
         scores_per_turn.append(scores)
         last_turn_scores.append(scores[-1])
@@ -315,7 +316,7 @@ def corr_persona_diversity_problem_focus(eval_data_all):
 
     for sample in eval_data_all:
         persona_diversities.append(sample["persona_diversity"])
-        scores, thetas, total_theta, solutions = FocusCalculator.calculate_per_turn(sample)
+        scores, thetas, total_theta, solutions = FOCUS_CALCULATOR_FUNCTION(sample)
         problem_focus_scores.append(total_theta)
 
     plt.scatter(persona_diversities, problem_focus_scores)
@@ -365,7 +366,7 @@ def successful_samples():
             scores_per_turn, thetas_per_turn, total_thetas, solutions_per_turn = [], [], [], []
 
             for index, sample in enumerate(eval_data):
-                scores, thetas, total_theta, solutions = FocusCalculator.calculate_per_turn(sample)
+                scores, thetas, total_theta, solutions = FOCUS_CALCULATOR_FUNCTION(sample)
                 thetas_per_turn.append(thetas)
                 scores_per_turn.append(scores)
                 solutions_per_turn.append(solutions)
@@ -482,7 +483,7 @@ def successful_samples():
 def calculate_avg_turning_points(eval_data):
     turning_points = []
     for sample in eval_data:
-        _, thetas, _, _ = FocusCalculator.calculate_per_turn(sample)
+        _, thetas, _, _ = FOCUS_CALCULATOR_FUNCTION(sample)
         turning_points.append(len([theta for theta in thetas if theta < 0]))
 
     return np.mean(turning_points)
@@ -624,7 +625,7 @@ def get_first_agreement_turns(eval_data):
     print(f"Average first agreement turn: {np.mean(turns):.2f}, Std-Dev: {np.std(turns):.2f}")
     print(f"Median first agreement turn: {np.median(turns):.2f}")
     print(f"Min first agreement turn: {min(turns)}, Max first agreement turn: {max(turns)}")
-    print(f"Agreement distribution by turn:")
+    print("Agreement distribution by turn:")
     for turn in range(1, NUM_TURNS + 1):
         count = turns.count(turn)
         percentage = count / len(turns) * 100

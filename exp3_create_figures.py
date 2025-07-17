@@ -12,7 +12,8 @@ logger = logging.getLogger("mallm")
 
 NUM_TURNS = 7
 TASKS_ORDER = ["mmlu_pro"]
-
+FOCUS_CALCULATOR = FocusCalculator()
+FOCUS_CALCULATOR_FUNCTION = FOCUS_CALCULATOR.calculate_per_turn_embedding_similarity
 
 original_print = print
 
@@ -76,7 +77,7 @@ def successful_samples(eval_data_normal, eval_data_policy, eval_data_regenerate,
             scores_per_turn, thetas_per_turn, total_thetas, solutions_per_turn = [], [], [], []
 
             for index, sample in enumerate(eval_data):
-                scores, thetas, total_theta, solutions = FocusCalculator.calculate_per_turn(sample)
+                scores, thetas, total_theta, solutions = FOCUS_CALCULATOR_FUNCTION(sample)
                 thetas_per_turn.append(thetas)
                 scores_per_turn.append(scores)
                 solutions_per_turn.append(solutions)
@@ -177,7 +178,7 @@ def successful_samples(eval_data_normal, eval_data_policy, eval_data_regenerate,
 def calculate_avg_turning_points(eval_data):
     turning_points = []
     for sample in eval_data:
-        _, thetas, _, _ = FocusCalculator.calculate_per_turn(sample)
+        _, thetas, _, _ = FOCUS_CALCULATOR_FUNCTION(sample)
         turning_points.append(len([theta for theta in thetas if theta != 0]))
 
     return np.mean(turning_points)
@@ -247,7 +248,7 @@ def get_eval_stats_and_eval_data(dataset_to_process = None):
         datasets = [dataset_to_process]
 
     stats = {dataset: {} for dataset in datasets}
-    eval_data = {dataset: {} for dataset in datasets}
+    {dataset: {} for dataset in datasets}
 
     for dataset in datasets:
         with open(f"exp1/out/output_{dataset}_repeat1-stats.json", "r") as f:
@@ -297,7 +298,7 @@ def get_experiment_stats_and_eval_data(llm_judge = False, intervention = "policy
         avg_scores_per_turn_delta_std_dev = [0] * NUM_TURNS
         avg_scores_per_turn_individual = [[0] * 3 for _ in range(NUM_TURNS)]
         avg_clockSeconds1, avg_clockSeconds2, avg_clockSeconds3 = 0, 0, 0
-        ends_of_turns = range(2, 7*num_agents, num_agents)
+        range(2, 7*num_agents, num_agents)
 
         if not baseline:
             with open(f"{exp_dir}/out/output_{dataset}{intervention_str}{llm_judge_str}_repeat1-eval.json", "r") as f:
